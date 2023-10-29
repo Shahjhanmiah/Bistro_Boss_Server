@@ -61,6 +61,18 @@ async function run() {
     })
 
 
+    // Warning: use verifyJWT before using verifyAdmin
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email }
+      const user = await usersCollection.findOne(query);
+      if (user?.role !== 'admin') {
+        return res.status(403).send({ error: true, message: 'forbidden message' });
+      }
+      next();
+    }
+
+
     // user relate api ata time  one user Signup but note one way 
     app.post('/users', async (req, res) => {
       const user = req.body;
@@ -137,7 +149,7 @@ async function run() {
 
     // menu post api 
 
-    app.post('/menu',async(req,res)=>{
+    app.post('/menu',verifyJWT,async(req,res)=>{
       const newItem = req.body;
       console.log(newItem);
       const result = await menuCollection.insertOne(newItem)
