@@ -149,7 +149,7 @@ async function run() {
 
     // menu post api 
 
-    app.post('/menu',verifyJWT,async(req,res)=>{
+    app.post('/menu',verifyJWT,verifyAdmin, async(req,res)=>{
       const newItem = req.body;
       console.log(newItem);
       const result = await menuCollection.insertOne(newItem)
