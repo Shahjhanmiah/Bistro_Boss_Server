@@ -3,6 +3,7 @@ const app = express();
 var jwt = require('jsonwebtoken');
 const cors = require("cors")
 require('dotenv').config()
+const stripe = require('stripe')(process.env.PAYMENT_SECRITE_KEY)
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.Port || 5000;
 
@@ -31,6 +32,8 @@ const verifyJWT = (req, res, next) => {
     next();
   })
 }
+
+// What's Up packeage 
 
 
 const uri = "mongodb+srv://bistor_boss:rDE36uVnlIzaQ08k@cluster0.ga6ydds.mongodb.net/?retryWrites=true&w=majority";
@@ -157,7 +160,7 @@ async function run() {
 
     })
     // menu delete api 
-    app.delete('/menu/:id', async (req, res) => {
+    app.delete('/menu/:id',verifyJWT,verifyAdmin, async (req, res) => {
       const id = req.params.id;
       console.log(id);
       const query = { _id: new ObjectId(id) };
