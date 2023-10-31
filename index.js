@@ -53,6 +53,7 @@ async function run() {
     const menuCollection = client.db("bistordb").collection("menu");
     const reviewCollection = client.db("bistordb").collection("reviews");
     const cartCollection = client.db("bistordb").collection("carts");
+    const paymentCollection = client.db("bistordb").collection("payments");
 
     // jwt token 
 
@@ -203,22 +204,53 @@ async function run() {
       res.send(result);
     })
 
-    // payment create  intent
 
-    app.post('/create-payment-intent',async (req,res)=>{
-      const {price} = req.body
-      const amount = parseInt(price*100)
+    //  // create payment intent
+     app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: 'usd',
         payment_method_types: ['card']
       });
+       
 
       res.send({
         clientSecret: paymentIntent.client_secret
       })
     })
 
+    // payment method post 
+
+    app.post('/payments', verifyJWT, async (req, res) => {
+      const payment = req.body;
+      console.log(payment);
+      const  insertResult = await paymentCollection.insertOne(payment);
+      
+      const query = { _id: { $in: payment.cartItems.map(id => new ObjectId(id)) } }
+      const deleteResult = await cartCollection.deleteMany(query)
+      res.send({insertResult,deleteResult});
+    })
+
+
+
+
+
+    // // payment related api
+    // app.post('/payments', verifyJWT, async (req, res) => {
+    //   const payment = req.body;
+    //   const insertResult = await paymentCollection.insertOne(payment);
+    //   const query = { _id: { $in: payment.cartItems.map(id => new ObjectId(id)) } }
+    //   const deleteResult = await cartCollection.deleteMany(query)
+    //   res.send({ insertResult, deleteResult });
+
+    // })
+
+    
+
+
+    
 
 
 
@@ -229,6 +261,7 @@ async function run() {
 
 
   }
+
 }
 run().catch(error => console.log(error))
 
