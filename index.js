@@ -232,6 +232,37 @@ async function run() {
       const deleteResult = await cartCollection.deleteMany(query)
       res.send({insertResult,deleteResult});
     })
+    
+
+    //admine status 
+
+    app.get('/admin-stats', verifyJWT,verifyAdmin, async (req, res) => {
+      const users = await usersCollection.estimatedDocumentCount();
+      const products = await menuCollection.estimatedDocumentCount();
+       const orders = await paymentCollection.estimatedDocumentCount();
+
+      // best way to get sum of the price field is to use group and sum operator
+      /*
+        await paymentCollection.aggregate([
+          {
+            $group: {
+              _id: null,
+              total: { $sum: '$price' }
+            }
+          }
+        ]).toArray()
+      */
+
+      const payments = await paymentCollection.find().toArray();
+       const revenue = payments.reduce( ( sum, payment) => sum + payment.price, 0)
+
+      res.send({
+         revenue,
+        users,
+         products,
+         orders
+      })
+    })
 
 
 
