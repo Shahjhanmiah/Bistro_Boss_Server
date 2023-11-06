@@ -54,6 +54,7 @@ async function run() {
     const reviewCollection = client.db("bistordb").collection("reviews");
     const cartCollection = client.db("bistordb").collection("carts");
     const paymentCollection = client.db("bistordb").collection("payments");
+    const BookingCollection = client.db("bistordb").collection("booking");
 
     // jwt token 
 
@@ -93,7 +94,7 @@ async function run() {
 
     // user verify email er  api 
 
-    app.get('/users/admin/:email',verifyJWT,async (req, res) => {
+    app.get('/users/admin/:email', verifyJWT, async (req, res) => {
       const email = req.params.email;
 
       if (req.decoded.email !== email) {
@@ -153,15 +154,41 @@ async function run() {
 
     // menu post api 
 
-    app.post('/menu',verifyJWT,verifyAdmin, async(req,res)=>{
+    app.post('/menu', verifyJWT, verifyAdmin, async (req, res) => {
       const newItem = req.body;
       console.log(newItem);
       const result = await menuCollection.insertOne(newItem)
       res.send(result)
 
     })
+
+
+
+    // menu  update doc 
+
+    app.put('/menu/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true };
+      const updatedCoffee = req.body;
+
+      const menu = {
+        $set: {
+          recipe: updatedCoffee.recipe,
+          category: updatedCoffee.category,
+          price: updatedCoffee.price,
+
+
+        }
+      }
+
+      const result = await menuCollection.updateOne(filter, menu, options);
+      res.send(result);
+    })
+
+
     // menu delete api 
-    app.delete('/menu/:id',verifyJWT,verifyAdmin, async (req, res) => {
+    app.delete('/menu/:id', verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       console.log(id);
       const query = { _id: new ObjectId(id) };
@@ -204,9 +231,60 @@ async function run() {
       res.send(result);
     })
 
+    // put api
+
+
+    // user update doc admin plane 
+    // app.patch('/users/done/:id', async (req, res) => {
+    //   const id = req.params.id;
+    //   console.log(id);
+    //   const filter = { _id: new ObjectId(id) };
+    //   const updateDoc = {
+    //     $set: {
+    //       role:'done'
+    //     },
+    //   };
+
+    //   const result = await BookingCollection.updateOne(filter, updateDoc);
+    //   res.send(result);
+
+    // })
+
+
+    // bookig delete 
+
+    app.delete('/booking/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await BookingCollection.deleteOne(query);
+      res.send(result);
+    })
+
+
+
+    // get  api  booking
+
+    app.get('/booking', async (req, res) => {
+      const result = await BookingCollection.find().toArray();
+      res.send(result);
+    })
+
+
+    // booing api 
+
+    app.post('/booking', async (req, res) => {
+      const newBookig = req.body;
+      console.log(newBookig);
+      const result = await BookingCollection.insertOne(newBookig)
+      res.send(result)
+
+    })
+
+
+
 
     //  // create payment intent
-     app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+    app.post('/create-payment-intent', verifyJWT, async (req, res) => {
       const { price } = req.body;
       const amount = parseInt(price * 100);
       const paymentIntent = await stripe.paymentIntents.create({
@@ -214,7 +292,7 @@ async function run() {
         currency: 'usd',
         payment_method_types: ['card']
       });
-       
+
 
       res.send({
         clientSecret: paymentIntent.client_secret
@@ -226,20 +304,20 @@ async function run() {
     app.post('/payments', verifyJWT, async (req, res) => {
       const payment = req.body;
       console.log(payment);
-      const  insertResult = await paymentCollection.insertOne(payment);
-      
+      const insertResult = await paymentCollection.insertOne(payment);
+
       const query = { _id: { $in: payment.cartItems.map(id => new ObjectId(id)) } }
       const deleteResult = await cartCollection.deleteMany(query)
-      res.send({insertResult,deleteResult});
+      res.send({ insertResult, deleteResult });
     })
-    
+
 
     //admine status 
 
-    app.get('/admin-stats', verifyJWT,verifyAdmin, async (req, res) => {
+    app.get('/admin-stats', verifyJWT, verifyAdmin, async (req, res) => {
       const users = await usersCollection.estimatedDocumentCount();
       const products = await menuCollection.estimatedDocumentCount();
-       const orders = await paymentCollection.estimatedDocumentCount();
+      const orders = await paymentCollection.estimatedDocumentCount();
 
       // best way to get sum of the price field is to use group and sum operator
       /*
@@ -254,20 +332,20 @@ async function run() {
       */
 
       const payments = await paymentCollection.find().toArray();
-       const revenue = payments.reduce( ( sum, payment) => sum + payment.price, 0)
+      const revenue = payments.reduce((sum, payment) => sum + payment.price, 0)
 
       res.send({
-         revenue,
+        revenue,
         users,
-         products,
-         orders
+        products,
+        orders
       })
     })
 
 
     // In This  Chart and PaiChart 
 
-    app.get('/order-stats', verifyJWT, verifyAdmin, async(req, res) =>{
+    app.get('/order-stats', verifyJWT, verifyAdmin, async (req, res) => {
       const pipeline = [
         {
           $lookup: {
@@ -317,10 +395,10 @@ async function run() {
 
     // })
 
-    
 
 
-    
+
+
 
 
 
