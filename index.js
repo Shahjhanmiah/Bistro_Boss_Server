@@ -311,6 +311,45 @@ async function run() {
       res.send({ insertResult, deleteResult });
     })
 
+    //  Payment api date load 
+    app.get('/payment',async(req,res)=>{
+
+      const result = await paymentCollection.find().toArray()
+      console.log(result);
+      res.send(result)
+
+    })
+
+    // user status 
+
+    app.get('/user-stats', async (req, res) => {
+      const payment = await paymentCollection.estimatedDocumentCount();
+      const booking = await BookingCollection.estimatedDocumentCount();
+      const review = await reviewCollection.estimatedDocumentCount();
+     
+      // best way to get sum of the price field is to use group and sum operator
+      /*
+        await paymentCollection.aggregate([
+          {
+            $group: {
+              _id: null,
+              total: { $sum: '$price' }
+            }
+          }
+        ]).toArray()
+      */
+
+      const payments = await paymentCollection.find().toArray();
+      
+      res.send({
+        payment,
+        booking,
+        review
+      })
+    })
+
+   
+
 
     //admine status 
 
